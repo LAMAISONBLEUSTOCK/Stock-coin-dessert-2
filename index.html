@@ -379,12 +379,26 @@ function resetConfirm() {
     data.forEach(sec => sec.produits.forEach(p => { p.qty = p.max; }));
     render();
     showToast("↺ Stocks réinitialisés — synchronisation en cours...");
-    // Envoie chaque produit vers Google Sheets
-    data.forEach(sec => sec.produits.forEach(p => {
-      envoyerVersSheetsEtAlerter(p.nom, p.qty, p.seuil, p.type, p.unite);
-    }));
-  }
-}
+    
+    // Envoie chaque produit avec un délai de 500ms entre chaque
+    const tousLesProduits = data.flatMap(sec => sec.produits);
+    tousLesProduits.forEach((p, index) => {
+      setTimeout(() => {
+        fetch(SHEETS_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            produit: p.nom,
+            qty: p.qty,
+            seuil: p.seuil,
+            type: p.type,
+            unite: p.unite,
+            reset: true
+          })
+        });
+      }, index * 500);
+    });
   }
 }
 
