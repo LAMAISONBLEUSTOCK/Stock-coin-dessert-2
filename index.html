@@ -378,7 +378,13 @@ function resetConfirm() {
   if (confirm("Remettre tous les stocks à leur valeur initiale ?")) {
     data.forEach(sec => sec.produits.forEach(p => { p.qty = p.max; }));
     render();
-    showToast("↺ Stocks réinitialisés");
+    showToast("↺ Stocks réinitialisés — synchronisation en cours...");
+    // Envoie chaque produit vers Google Sheets
+    data.forEach(sec => sec.produits.forEach(p => {
+      envoyerVersSheetsEtAlerter(p.nom, p.qty, p.seuil, p.type, p.unite);
+    }));
+  }
+}
   }
 }
 
