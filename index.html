@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Stock Desserts & Glaces</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #1a1a1a; min-height: 100vh; }
+
+    .header { background: white; border-bottom: 1px solid #e5e5e5; padding: 14px 16px; position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; }
+    .header-title { font-size: 16px; font-weight: 600; }
+    .header-sub { font-size: 11px; color: #888; margin-top: 2px; }
+    .sync-status { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+    .sync-ok { background: #e8f5e9; color: #22a851; }
+    .sync-pending { background: #fff3e0; color: #e08a00; }
+    .sync-error { background: #fdf0ef; color: #d93025; }
+
+    /* BANNIÈRE CONFIGURATION */
+    .config-banner { background: #fff3e0; border-bottom: 1px solid #ffe0b2; padding: 10px 16px; font-size: 12px; color: #e65100; display: flex; align-items: center; gap: 8px; }
+    .config-banner.hidden { display: none; }
+
+    .container { max-width: 700px; margin: 0 auto; padding: 12px 12px 80px; }
+
+    .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 12px; }
+    .stat { background: white; border-radius: 10px; padding: 10px 8px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .stat-val { font-size: 22px; font-weight: 700; }
+    .stat-label { font-size: 10px; color: #888; margin-top: 2px; }
+    .ok-color { color: #22a851; }
+    .low-color { color: #e08a00; }
+    .out-color { color: #d93025; }
+
+    .alert-section { background: white; border-radius: 12px; overflow: hidden; margin-bottom: 12px; border: 2px solid #d93025; box-shadow: 0 0 0 3px rgba(217,48,37,0.1); }
+    .alert-section-header { background: #fdf0ef; padding: 12px 14px; display: flex; align-items: center; gap: 8px; }
+    .alert-section-title { font-size: 14px; font-weight: 700; color: #d93025; flex: 1; }
+    .alert-count { font-size: 12px; color: #d93025; font-weight: 600; background: rgba(217,48,37,0.1); padding: 2px 8px; border-radius: 20px; }
+    .all-ok { background: white; border-radius: 12px; padding: 14px; text-align: center; margin-bottom: 12px; border: 1.5px solid #22a851; }
+    .all-ok-text { color: #22a851; font-weight: 600; font-size: 14px; }
+
+    .section { background: white; border-radius: 12px; overflow: hidden; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .section-glaces { border-top: 3px solid #7F77DD; }
+    .section-sorbets { border-top: 3px solid #5BA4CF; }
+    .section-accompagnements { border-top: 3px solid #E67E22; }
+
+    .sec-header { padding: 12px 14px; display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+    .sec-header-glaces { background: #f3f2fd; }
+    .sec-header-sorbets { background: #eef6fc; }
+    .sec-header-accompagnements { background: #fef5ec; }
+    .sec-icon { font-size: 20px; }
+    .sec-title { font-size: 14px; font-weight: 600; flex: 1; }
+    .sec-badge { font-size: 11px; color: #888; background: rgba(0,0,0,0.06); padding: 2px 8px; border-radius: 20px; }
+    .sec-toggle { font-size: 12px; color: #aaa; margin-left: 4px; }
+    .sec-body { border-top: 1px solid #f0f0f0; }
+
+    .prod-row { padding: 11px 14px; border-bottom: 1px solid #f5f5f5; display: flex; align-items: center; gap: 10px; transition: background 0.1s; }
+    .prod-row:last-child { border-bottom: none; }
+    .prod-row.alert-row { background: #fffbf0; }
+    .prod-info { flex: 1; min-width: 0; }
+    .prod-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .prod-meta { font-size: 11px; color: #aaa; margin-top: 2px; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+    .tag { font-size: 10px; padding: 1px 6px; border-radius: 20px; font-weight: 500; }
+    .tag-quart { background: #fce4ec; color: #c62828; }
+    .tag-seuil5 { background: #e8f5e9; color: #2e7d32; }
+    .tag-section { background: #f0f0f0; color: #666; }
+
+    .qty-control { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .qty-btn { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid #e0e0e0; background: white; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; color: #555; font-weight: 300; transition: all 0.15s; }
+    .qty-btn:active { background: #f0f0f0; transform: scale(0.9); }
+    .qty-num { min-width: 36px; text-align: center; font-size: 15px; font-weight: 700; }
+
+    .niveau { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+    .bar-wrap { width: 50px; height: 5px; background: #eee; border-radius: 3px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+    .bar-ok { background: #22a851; }
+    .bar-low { background: #e08a00; }
+    .bar-out { background: #d93025; }
+    .pct { font-size: 10px; color: #bbb; min-width: 28px; }
+
+    .pot-wrap { display: flex; gap: 3px; }
+    .pot-seg { width: 13px; height: 13px; border-radius: 3px; }
+    .pot-full { background: #22a851; }
+    .pot-low { background: #e08a00; }
+    .pot-out { background: #d93025; }
+    .pot-empty { background: #eee; }
+
+    .badge { font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 600; flex-shrink: 0; }
+    .badge-ok { background: #e8f5e9; color: #22a851; }
+    .badge-low { background: #fff3e0; color: #e08a00; }
+    .badge-out { background: #fdf0ef; color: #d93025; }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    .pulse { animation: pulse 1.8s infinite; }
+    @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    .spin { animation: spin 1s linear infinite; display: inline-block; }
+
+    .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 18px; border-radius: 20px; font-size: 13px; z-index: 100; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+    .toast.show { opacity: 1; }
+
+    .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #eee; padding: 10px 16px; display: flex; gap: 8px; }
+    .export-btn { flex: 1; padding: 10px; font-size: 13px; font-weight: 600; border: 1.5px solid #e0e0e0; border-radius: 10px; background: white; color: #555; cursor: pointer; }
+    .reset-btn { padding: 10px 14px; font-size: 13px; font-weight: 600; border: 1.5px solid #e0e0e0; border-radius: 10px; background: white; color: #d93025; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">🍦 Stock Desserts & Glaces</div>
+    <div class="header-sub">Poste Desserts / Glaces / Crêpes</div>
+  </div>
+  <span class="sync-status sync-ok" id="sync-status">✓ Connecté</span>
+</div>
+
+<!-- BANNIÈRE si Google Sheets pas encore configuré -->
+<div class="config-banner" id="config-banner">
+  ⚙️ Configure l'URL Google Sheets dans le fichier pour activer les alertes WhatsApp
+</div>
+
+<div class="container">
+  <div class="stats">
+    <div class="stat"><div class="stat-val" id="s-total">—</div><div class="stat-label">Produits</div></div>
+    <div class="stat"><div class="stat-val ok-color" id="s-ok">—</div><div class="stat-label">OK</div></div>
+    <div class="stat"><div class="stat-val low-color" id="s-low">—</div><div class="stat-label">⚠️ Alerte</div></div>
+    <div class="stat"><div class="stat-val out-color" id="s-out">—</div><div class="stat-label">🔴 Épuisé</div></div>
+  </div>
+  <div id="alert-zone"></div>
+  <div id="sections-zone"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="footer">
+  <button class="export-btn" onclick="exporter()">📥 Exporter CSV</button>
+  <button class="reset-btn" onclick="resetConfirm()">↺ Reset</button>
+</div>
+
+<script>
+// ============================================================
+// ⚙️ CONFIGURATION — À remplir après avoir créé le Apps Script
+// ============================================================
+const SHEETS_URL = "COLLE_ICI_L_URL_DU_APPS_SCRIPT";
+// Exemple: "https://script.google.com/macros/s/XXXXXXXX/exec"
+// ============================================================
+
+const CONFIGURE = SHEETS_URL === "COLLE_ICI_L_URL_DU_APPS_SCRIPT";
+if (!CONFIGURE) document.getElementById("config-banner").classList.add("hidden");
+
+const quartsLabels = {4:"4/4 Plein",3:"3/4",2:"2/4 Moitié",1:"1/4 ⚠️",0:"Vide"};
+
+const data = [
+  {
+    id:"glaces", titre:"Glaces — Crèmes glacées", icon:"🍨",
+    secClass:"section-glaces", headerClass:"sec-header-glaces",
+    produits:[
+      {nom:"Azzuro", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Banane Nuty", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Barbe à Papa", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Café", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Calisson", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Caramel beurre demi-sel", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Chocolat", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Chouchou", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Fleur d'oranger éclats pistache", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Noix de coco", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Palet Breton", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Pistache", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Praline rose", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Rhum raisin", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Vanille", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Yaourt myrtille", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+    ]
+  },
+  {
+    id:"sorbets", titre:"Sorbets — Fruits", icon:"🍧",
+    secClass:"section-sorbets", headerClass:"sec-header-sorbets",
+    produits:[
+      {nom:"Abricot", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Clémentine corse", unite:"bac", qty:4, seuil:1, max:4, type:"quart"},
+      {nom:"Fraise", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Groseille Framboise", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Hibiscus Rouge Passion Banane", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Kalamansi", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Mangue", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Pêche de vigne", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Poire", unite:"bacs", qty:3, seuil:1, max:3, type:"bac"},
+    ]
+  },
+  {
+    id:"accompagnements", titre:"Accompagnements", icon:"🍯",
+    secClass:"section-accompagnements", headerClass:"sec-header-accompagnements",
+    produits:[
+      {nom:"Crème chantilly", unite:"bombes", qty:12, seuil:5, max:12, type:"bac"},
+      {nom:"Coulis fruits rouges", unite:"bouteilles", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Coulis de passion", unite:"bouteilles", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Confiture de myrtille", unite:"pot", qty:4, seuil:1, max:4, type:"quart"},
+      {nom:"Confiture abricot", unite:"pot", qty:4, seuil:1, max:4, type:"quart"},
+      {nom:"Confiture de fraise", unite:"pot", qty:4, seuil:1, max:4, type:"quart"},
+      {nom:"Confiture de clémentine", unite:"pot", qty:4, seuil:1, max:4, type:"quart"},
+      {nom:"Nutella", unite:"pots", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Sucre", unite:"kg", qty:3, seuil:1, max:3, type:"bac"},
+      {nom:"Miel", unite:"pot", qty:4, seuil:1, max:4, type:"quart"},
+      {nom:"Nappage caramel", unite:"bouteille", qty:4, seuil:1, max:4, type:"quart"},
+      {nom:"Nappage café", unite:"bouteille", qty:4, seuil:1, max:4, type:"quart"},
+      {nom:"Cigarette de déco", unite:"boîte", qty:4, seuil:1, max:4, type:"quart"},
+      {nom:"Éclats d'amande", unite:"sachet", qty:4, seuil:1, max:4, type:"quart"},
+    ]
+  }
+];
+
+const collapsed = {};
+
+function statut(p) {
+  if (p.qty === 0) return "out";
+  if (p.qty <= p.seuil) return "low";
+  return "ok";
+}
+
+function setSyncStatus(state) {
+  const el = document.getElementById("sync-status");
+  if (state === "pending") { el.className = "sync-status sync-pending"; el.textContent = "⏳ Envoi..."; }
+  else if (state === "ok") { el.className = "sync-status sync-ok"; el.textContent = "✓ Synchronisé"; }
+  else if (state === "error") { el.className = "sync-status sync-error"; el.textContent = "✗ Erreur sync"; }
+  else { el.className = "sync-status sync-ok"; el.textContent = "✓ Connecté"; }
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+// Envoi vers Google Sheets Apps Script
+async function envoyerVersSheetsEtAlerter(produit, qty, seuil, type, unite) {
+  if (CONFIGURE) return; // Pas encore configuré
+  setSyncStatus("pending");
+  try {
+    const payload = { produit, qty, seuil, type, unite, timestamp: new Date().toISOString() };
+    await fetch(SHEETS_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    setSyncStatus("ok");
+    showToast("✓ Stock mis à jour & patron alerté");
+  } catch(e) {
+    setSyncStatus("error");
+    showToast("⚠️ Erreur de synchronisation");
+  }
+}
+
+function updateStats() {
+  const all = data.flatMap(s => s.produits);
+  document.getElementById("s-total").textContent = all.length;
+  document.getElementById("s-ok").textContent = all.filter(p => statut(p)==="ok").length;
+  document.getElementById("s-low").textContent = all.filter(p => statut(p)==="low").length;
+  document.getElementById("s-out").textContent = all.filter(p => statut(p)==="out").length;
+}
+
+function niveauHTML(p) {
+  const st = statut(p);
+  if (p.type === "quart") {
+    let h = '<div class="pot-wrap">';
+    for (let i = 1; i <= p.max; i++) {
+      const cls = i <= p.qty ? (st==="out"?"pot-out":p.qty===1?"pot-low":"pot-full") : "pot-empty";
+      h += `<div class="pot-seg ${cls}"></div>`;
+    }
+    return h + '</div>';
+  }
+  const pct = Math.round((p.qty / p.max) * 100);
+  const bClass = st==="ok"?"bar-ok":st==="low"?"bar-low":"bar-out";
+  return `<div class="bar-wrap"><div class="bar-fill ${bClass}" style="width:${pct}%"></div></div><div class="pct">${p.qty}/${p.max}</div>`;
+}
+
+function makeRow(p, secId, idx, showSection) {
+  const st = statut(p);
+  const isQuart = p.type === "quart";
+  const isChantilly = p.nom === "Crème chantilly";
+  const badgeClass = st==="ok"?"badge-ok":st==="low"?"badge-low":"badge-out";
+  const badgeLabel = st==="ok"?"OK":st==="low"?"⚠️ Alerte":"🔴 Épuisé";
+  const qtyLabel = isQuart ? (quartsLabels[p.qty]||p.qty+"/4") : p.qty;
+  const rowClass = st!=="ok" ? "prod-row alert-row" : "prod-row";
+  const secName = showSection ? data.find(s=>s.id===secId).titre : "";
+
+  return `<div class="${rowClass}">
+    <div class="prod-info">
+      <div class="prod-name">${p.nom}</div>
+      <div class="prod-meta">
+        ${isQuart ? '<span class="tag tag-quart">¼ pot</span>' : ''}
+        ${isChantilly ? '<span class="tag tag-seuil5">alerte à 5</span>' : ''}
+        ${showSection ? `<span class="tag tag-section">${secName}</span>` : ''}
+        <span>${p.unite}</span>
+      </div>
+    </div>
+    <div class="niveau">${niveauHTML(p)}</div>
+    <div class="qty-control">
+      <button class="qty-btn" onclick="chg('${secId}',${idx},-1)">−</button>
+      <div class="qty-num">${qtyLabel}</div>
+      <button class="qty-btn" onclick="chg('${secId}',${idx},1)">+</button>
+    </div>
+    <span class="badge ${badgeClass}">${badgeLabel}</span>
+  </div>`;
+}
+
+function renderAlertZone() {
+  const alertes = [];
+  data.forEach(sec => sec.produits.forEach((p,i) => {
+    if (statut(p) !== "ok") alertes.push({p, secId:sec.id, i});
+  }));
+  const zone = document.getElementById("alert-zone");
+  if (alertes.length === 0) {
+    zone.innerHTML = `<div class="all-ok"><div class="all-ok-text">✅ Tous les stocks sont OK !</div></div>`;
+  } else {
+    const rows = alertes.map(({p,secId,i}) => makeRow(p,secId,i,true)).join("");
+    zone.innerHTML = `<div class="alert-section">
+      <div class="alert-section-header">
+        <span class="sec-icon pulse">🚨</span>
+        <span class="alert-section-title">Produits en alerte — À commander</span>
+        <span class="alert-count">${alertes.length}</span>
+      </div>
+      <div>${rows}</div>
+    </div>`;
+  }
+}
+
+function renderSections() {
+  const zone = document.getElementById("sections-zone");
+  zone.innerHTML = data.map(sec => {
+    const rows = sec.produits.map((p,i) => makeRow(p, sec.id, i, false)).join("");
+    const isCollapsed = collapsed[sec.id];
+    return `<div class="section ${sec.secClass}">
+      <div class="sec-header ${sec.headerClass}" onclick="toggle('${sec.id}')">
+        <span class="sec-icon">${sec.icon}</span>
+        <span class="sec-title">${sec.titre}</span>
+        <span class="sec-badge">${sec.produits.length}</span>
+        <span class="sec-toggle" id="tog-${sec.id}">${isCollapsed?"▸":"▾"}</span>
+      </div>
+      <div class="sec-body" id="body-${sec.id}" style="display:${isCollapsed?"none":"block"}">${rows}</div>
+    </div>`;
+  }).join("");
+}
+
+function render() {
+  renderAlertZone();
+  renderSections();
+  updateStats();
+}
+
+function toggle(id) {
+  collapsed[id] = !collapsed[id];
+  render();
+}
+
+function chg(secId, idx, delta) {
+  const sec = data.find(s => s.id === secId);
+  const item = sec.produits[idx];
+  const ancien = item.qty;
+  item.qty = Math.max(0, Math.min(item.max, item.qty + delta));
+
+  // Déclenche alerte si passage sous le seuil
+  if (ancien > item.seuil && item.qty <= item.seuil && item.qty > 0) {
+    const msg = item.type==="quart"
+      ? `⚠️ ALERTE\n\n"${item.nom}" est au dernier quart !\nPatron alerté sur WhatsApp.`
+      : `⚠️ ALERTE\n\n"${item.nom}" : il reste ${item.qty} ${item.unite}\nPatron alerté sur WhatsApp.`;
+    setTimeout(() => alert(msg), 50);
+    // Envoie au Google Sheets → WhatsApp patron
+    envoyerVersSheetsEtAlerter(item.nom, item.qty, item.seuil, item.type, item.unite);
+  } else if (ancien !== item.qty) {
+    // Mise à jour simple sans alerte
+    if (!CONFIGURE) showToast("✓ Stock mis à jour");
+  }
+
+  render();
+}
+
+function resetConfirm() {
+  if (confirm("Remettre tous les stocks à leur valeur initiale ?")) {
+    data.forEach(sec => sec.produits.forEach(p => { p.qty = p.max; }));
+    render();
+    showToast("↺ Stocks réinitialisés");
+  }
+}
+
+function exporter() {
+  let csv = "Produit,Section,Unité,Type,Quantité,Seuil,Max,Statut\n";
+  data.forEach(sec => sec.produits.forEach(p => {
+    const st = statut(p);
+    const label = st==="ok"?"✅ OK":st==="low"?"⚠️ Alerte":"🔴 Épuisé";
+    const qtyLabel = p.type==="quart" ? `${p.qty}/4` : p.qty;
+    csv += `"${p.nom}","${sec.titre}","${p.unite}","${p.type==="quart"?"Quarts":"Unités"}","${qtyLabel}","${p.seuil}","${p.max}","${label}"\n`;
+  }));
+  const blob = new Blob([csv], {type:"text/csv"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "stock_glaces.csv";
+  a.click();
+}
+
+render();
+</script>
+</body>
+</html>
