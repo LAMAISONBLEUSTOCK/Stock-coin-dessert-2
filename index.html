@@ -138,11 +138,11 @@
 // ============================================================
 // ⚙️ CONFIGURATION — À remplir après avoir créé le Apps Script
 // ============================================================
-const SHEETS_URL = "COLLE_ICI_L_URL_DU_APPS_SCRIPT";
+const SHEETS_URL = "https://script.google.com/macros/s/AKfycbzVZsKo25NPICTaMW6GUVqr3FIC3T_LHquuC_jSZ1mWV7oqrADTBCJsB0cHGpGPwsM/exec";
 // Exemple: "https://script.google.com/macros/s/XXXXXXXX/exec"
 // ============================================================
 
-const CONFIGURE = SHEETS_URL === "COLLE_ICI_L_URL_DU_APPS_SCRIPT";
+const CONFIGURE = SHEETS_URL === "https://script.google.com/macros/s/AKfycbzVZsKo25NPICTaMW6GUVqr3FIC3T_LHquuC_jSZ1mWV7oqrADTBCJsB0cHGpGPwsM/exec";
 if (!CONFIGURE) document.getElementById("config-banner").classList.add("hidden");
 
 const quartsLabels = {4:"4/4 Plein",3:"3/4",2:"2/4 Moitié",1:"1/4 ⚠️",0:"Vide"};
