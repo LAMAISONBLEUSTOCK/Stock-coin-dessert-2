@@ -436,7 +436,8 @@ function exporter() {
 async function chargerDepuisSheets() {
   setSyncStatus("pending");
   try {
-    const response = await fetch(SHEETS_URL);
+    const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(SHEETS_URL);
+    const response = await fetch(proxyUrl);
     const produits = await response.json();
     produits.forEach(p => {
       data.forEach(sec => {
@@ -454,7 +455,6 @@ async function chargerDepuisSheets() {
   }
   render();
 }
-
 chargerDepuisSheets();
 setInterval(chargerDepuisSheets, 60000);
 </script>
