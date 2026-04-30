@@ -447,7 +447,13 @@ async function actualiser() {
       data.forEach(sec => {
         sec.produits.forEach(item => {
           if (item.nom === p.nom) {
-            item.qty = isNaN(p.qty) ? item.max : Math.min(p.qty, item.max);
+            let valeur = p.qty;
+if (typeof p.qty === "string" && p.qty.includes("/")) {
+  valeur = parseFloat(p.qty.split("/")[0]);
+} else {
+  valeur = parseFloat(p.qty);
+}
+item.qty = isNaN(valeur) ? item.max : Math.min(valeur, item.max);
           }
         });
       });
