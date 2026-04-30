@@ -131,6 +131,7 @@
 <div class="toast" id="toast"></div>
 
 <div class="footer">
+  <button class="export-btn" onclick="actualiser()">🔄 Actualiser</button>
   <button class="export-btn" onclick="exporter()">📥 Exporter CSV</button>
   <button class="reset-btn" onclick="resetConfirm()">↺ Reset</button>
 </div>
@@ -434,28 +435,32 @@ function exporter() {
   a.click();
 }
 
-async function chargerDepuisSheets() {
+async function actualiser() {
   setSyncStatus("pending");
+  showToast("⏳ Chargement depuis Sheets...");
   try {
-    const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(SHEETS_URL);
-    const response = await fetch(proxyUrl);
+    const response = await fetch(SHEETS_URL + "?t=" + Date.now(), {
+      redirect: "follow"
+    });
     const produits = await response.json();
     produits.forEach(p => {
       data.forEach(sec => {
         sec.produits.forEach(item => {
           if (item.nom === p.nom) {
-            item.qty = isNaN(p.qty) ? item.max : p.qty;
+            item.qty = isNaN(p.qty) ? item.max : Math.min(p.qty, item.max);
           }
         });
       });
     });
     setSyncStatus("ok");
+    showToast("✅ Stocks mis à jour !");
   } catch(e) {
     setSyncStatus("error");
-    console.log("Erreur chargement:", e);
+    showToast("⚠️ Erreur de chargement");
   }
   render();
 }
+
 chargerDepuisSheets();
 setInterval(chargerDepuisSheets, 60000);
 </script>
