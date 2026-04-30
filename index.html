@@ -231,16 +231,32 @@ function showToast(msg) {
 }
 
 // Envoi vers Google Sheets Apps Script
-async function envoyerVersSheetsEtAlerter(produit, qty, seuil, type, unite) {
-  if (CONFIGURE) return; // Pas encore configuré
-  setSyncStatus("pending");
+async function mettreAJourSheets(produit, qty, seuil, type, unite) {
+  if (CONFIGURE) return;
   try {
-    const payload = { produit, qty, seuil, type, unite, timestamp: new Date().toISOString() };
     await fetch(SHEETS_URL, {
       method: "POST",
       mode: "no-cors",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ produit, qty, seuil, type, unite, alerter: false })
+    });
+    setSyncStatus("ok");
+    showToast("✓ Stock mis à jour");
+  } catch(e) {
+    setSyncStatus("error");
+    showToast("⚠️ Erreur de synchronisation");
+  }
+}
+
+async function envoyerVersSheetsEtAlerter(produit, qty, seuil, type, unite) {
+  if (CONFIGURE) return;
+  setSyncStatus("pending");
+  try {
+    await fetch(SHEETS_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ produit, qty, seuil, type, unite, alerter: true, timestamp: new Date().toISOString() })
     });
     setSyncStatus("ok");
     showToast("✓ Stock mis à jour & patron alerté");
