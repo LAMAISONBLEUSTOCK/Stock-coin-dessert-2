@@ -366,9 +366,9 @@ function chg(secId, idx, delta) {
     setTimeout(() => alert(msg), 50);
     // Envoie au Google Sheets → WhatsApp patron
     envoyerVersSheetsEtAlerter(item.nom, item.qty, item.seuil, item.type, item.unite);
-  } else if (ancien !== item.qty) {
-    // Mise à jour simple sans alerte
-    if (!CONFIGURE) showToast("✓ Stock mis à jour");
+ } else if (ancien !== item.qty) {
+    envoyerVersSheetsEtAlerter(item.nom, item.qty, item.seuil, item.type, item.unite);
+    showToast("✓ Stock mis à jour");
   }
 
   render();
