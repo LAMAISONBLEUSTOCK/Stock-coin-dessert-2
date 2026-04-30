@@ -433,7 +433,30 @@ function exporter() {
   a.click();
 }
 
-render();
+async function chargerDepuisSheets() {
+  setSyncStatus("pending");
+  try {
+    const response = await fetch(SHEETS_URL);
+    const produits = await response.json();
+    produits.forEach(p => {
+      data.forEach(sec => {
+        sec.produits.forEach(item => {
+          if (item.nom === p.nom) {
+            item.qty = isNaN(p.qty) ? item.max : p.qty;
+          }
+        });
+      });
+    });
+    setSyncStatus("ok");
+  } catch(e) {
+    setSyncStatus("error");
+    console.log("Erreur chargement:", e);
+  }
+  render();
+}
+
+chargerDepuisSheets();
+setInterval(chargerDepuisSheets, 60000);
 </script>
 </body>
 </html>
